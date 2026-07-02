@@ -1,0 +1,10 @@
+.git
+.gitignore
+README.md
+.env.example
+.eslintignore
+dist
+node_modules
+npm-debug.log
+.prettierignore
+.jeaan
