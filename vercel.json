@@ -1,5 +1,16 @@
 {
   "buildCommand": "npm run build",
-  "outputDirectory": "dist/client",
-  "public": "dist/client"
+  "functions": {
+    "api/index.ts": {
+      "runtime": "nodejs20.x",
+      "memory": 1024,
+      "maxDuration": 60
+    }
+  },
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/api/index.ts"
+    }
+  ]
 }
