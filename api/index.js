@@ -1,22 +1,31 @@
+let handler
+
 export default async (req, res) => {
   try {
-    const { default: handler } = await import('../dist/server/server.js')
+    if (!handler) {
+      const module = await import('../dist/server/server.js')
+      handler = module.default
+    }
 
     const response = await handler.fetch(
       new Request(new URL(req.url, `http://${req.headers.host}`), {
         method: req.method,
-        headers: req.headers,
-        body: req.body ? JSON.stringify(req.body) : undefined,
+        headers: new Headers(req.headers),
+        body: ['GET', 'HEAD'].includes(req.method) ? null : req.body,
       })
     )
 
-    for (const [key, value] of response.headers.entries()) {
+    res.statusCode = response.status
+
+    response.headers.forEach((value, key) => {
       res.setHeader(key, value)
-    }
-    res.status(response.status)
-    res.end(await response.text())
+    })
+
+    const buffer = await response.arrayBuffer()
+    res.end(Buffer.from(buffer))
   } catch (error) {
-    console.error('Handler error:', error)
-    res.status(500).end(`Error: ${error.message}`)
+    console.error('[API Error]', error)
+    res.statusCode = 500
+    res.end(`Error: ${error?.message || 'Unknown error'}`)
   }
 }
