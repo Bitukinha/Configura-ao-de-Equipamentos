@@ -1,31 +1,55 @@
-import fs from 'fs'
+import fs from 'fs/promises'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const publicDir = path.join(__dirname, '../dist/client')
 
 let cachedHandler = null
 
 async function getHandler() {
   if (cachedHandler) return cachedHandler
+  const serverPath = path.join(__dirname, '../dist/server/server.js')
+  const handler = (await import(serverPath)).default
+  cachedHandler = handler
+  return handler
+}
 
+async function serveStatic(req, res, filePath) {
   try {
-    const serverPath = path.join(__dirname, '../dist/server/server.js')
-    const handler = (await import(serverPath)).default
-    cachedHandler = handler
-    return handler
-  } catch (err) {
-    console.error('Failed to load server handler:', err)
-    throw err
+    const file = await fs.readFile(filePath)
+    const ext = path.extname(filePath)
+    const mimeTypes = {
+      '.js': 'application/javascript',
+      '.css': 'text/css',
+      '.html': 'text/html',
+      '.svg': 'image/svg+xml',
+      '.png': 'image/png',
+      '.jpg': 'image/jpeg',
+      '.woff2': 'font/woff2',
+    }
+    res.setHeader('Content-Type', mimeTypes[ext] || 'application/octet-stream')
+    res.statusCode = 200
+    res.end(file)
+  } catch {
+    return false
   }
+  return true
 }
 
 export default async (req, res) => {
   try {
-    const handler = await getHandler()
-
     const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`)
-    
+    const pathname = url.pathname
+
+    // Tenta servir arquivo estático primeiro
+    if (!pathname.startsWith('/api')) {
+      const filePath = path.join(publicDir, pathname === '/' ? 'index.html' : pathname)
+      if (await serveStatic(req, res, filePath)) return
+    }
+
+    // Fallback para o handler dinâmico
+    const handler = await getHandler()
     const response = await handler.fetch(
       new Request(url.toString(), {
         method: req.method || 'GET',
@@ -34,15 +58,12 @@ export default async (req, res) => {
       })
     )
 
-    // Copy headers
     for (const [key, value] of response.headers) {
       res.setHeader(key, value)
     }
 
-    // Set status
     res.statusCode = response.status
 
-    // Send body
     if (response.body) {
       const buffer = await response.arrayBuffer()
       res.end(Buffer.from(buffer))
@@ -50,9 +71,8 @@ export default async (req, res) => {
       res.end()
     }
   } catch (error) {
-    console.error('Error in API handler:', error)
+    console.error('Error:', error)
     res.statusCode = 500
-    res.setHeader('Content-Type', 'text/plain')
-    res.end(`Internal Server Error: ${error.message}`)
+    res.end(`Error: ${error.message}`)
   }
 }
