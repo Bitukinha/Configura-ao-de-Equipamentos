@@ -1,31 +1,58 @@
-let handler
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+let cachedHandler = null
+
+async function getHandler() {
+  if (cachedHandler) return cachedHandler
+
+  try {
+    const serverPath = path.join(__dirname, '../dist/server/server.js')
+    const handler = (await import(serverPath)).default
+    cachedHandler = handler
+    return handler
+  } catch (err) {
+    console.error('Failed to load server handler:', err)
+    throw err
+  }
+}
 
 export default async (req, res) => {
   try {
-    if (!handler) {
-      const module = await import('../dist/server/server.js')
-      handler = module.default
-    }
+    const handler = await getHandler()
 
+    const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`)
+    
     const response = await handler.fetch(
-      new Request(new URL(req.url, `http://${req.headers.host}`), {
-        method: req.method,
-        headers: new Headers(req.headers),
-        body: ['GET', 'HEAD'].includes(req.method) ? null : req.body,
+      new Request(url.toString(), {
+        method: req.method || 'GET',
+        headers: req.headers || {},
+        body: ['GET', 'HEAD'].includes(req.method) ? undefined : req.body,
       })
     )
 
+    // Copy headers
+    for (const [key, value] of response.headers) {
+      res.setHeader(key, value)
+    }
+
+    // Set status
     res.statusCode = response.status
 
-    response.headers.forEach((value, key) => {
-      res.setHeader(key, value)
-    })
-
-    const buffer = await response.arrayBuffer()
-    res.end(Buffer.from(buffer))
+    // Send body
+    if (response.body) {
+      const buffer = await response.arrayBuffer()
+      res.end(Buffer.from(buffer))
+    } else {
+      res.end()
+    }
   } catch (error) {
-    console.error('[API Error]', error)
+    console.error('Error in API handler:', error)
     res.statusCode = 500
-    res.end(`Error: ${error?.message || 'Unknown error'}`)
+    res.setHeader('Content-Type', 'text/plain')
+    res.end(`Internal Server Error: ${error.message}`)
   }
 }
