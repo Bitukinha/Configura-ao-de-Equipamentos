@@ -31,10 +31,10 @@ async function serveStatic(req, res, filePath) {
     res.setHeader('Content-Type', mimeTypes[ext] || 'application/octet-stream')
     res.statusCode = 200
     res.end(file)
+    return true
   } catch {
     return false
   }
-  return true
 }
 
 export default async (req, res) => {
@@ -42,13 +42,11 @@ export default async (req, res) => {
     const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`)
     const pathname = url.pathname
 
-    // Tenta servir arquivo estático primeiro
-    if (!pathname.startsWith('/api')) {
-      const filePath = path.join(publicDir, pathname === '/' ? 'index.html' : pathname)
-      if (await serveStatic(req, res, filePath)) return
-    }
+    // Tenta servir arquivo estático
+    const filePath = path.join(publicDir, pathname === '/' ? 'index.html' : pathname)
+    if (await serveStatic(req, res, filePath)) return
 
-    // Fallback para o handler dinâmico
+    // Fallback para handler dinâmico
     const handler = await getHandler()
     const response = await handler.fetch(
       new Request(url.toString(), {
@@ -71,7 +69,7 @@ export default async (req, res) => {
       res.end()
     }
   } catch (error) {
-    console.error('Error:', error)
+    console.error('[API Error]', error.message)
     res.statusCode = 500
     res.end(`Error: ${error.message}`)
   }
