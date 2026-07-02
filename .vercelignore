@@ -1,9 +1,0 @@
-.git
-.gitignore
-README.md
-.env.example
-.eslintignore
-node_modules
-npm-debug.log
-.prettierignore
-.jeaan
