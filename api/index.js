@@ -1,40 +1,22 @@
-import { createServer } from 'http'
-import { fileURLToPath } from 'url'
-import { dirname } from 'path'
-
-const __dirname = dirname(fileURLToPath(import.meta.url))
-
-let server
-
 export default async (req, res) => {
   try {
-    if (!server) {
-      const { default: handler } = await import('../dist/server/server.js')
-      server = handler
-    }
+    const { default: handler } = await import('../dist/server/server.js')
 
-    const url = new URL(req.url, `http://${req.headers.host}`)
-    const response = await server.fetch(
-      new Request(url, {
+    const response = await handler.fetch(
+      new Request(new URL(req.url, `http://${req.headers.host}`), {
         method: req.method,
         headers: req.headers,
-        body:
-          req.method === 'GET' || req.method === 'HEAD'
-            ? undefined
-            : req.body,
+        body: req.body ? JSON.stringify(req.body) : undefined,
       })
     )
 
-    res.statusCode = response.status
-    for (const [key, value] of response.headers) {
+    for (const [key, value] of response.headers.entries()) {
       res.setHeader(key, value)
     }
-
-    const buffer = await response.arrayBuffer()
-    res.end(Buffer.from(buffer))
+    res.status(response.status)
+    res.end(await response.text())
   } catch (error) {
-    console.error('Error:', error)
-    res.statusCode = 500
-    res.end('Internal Server Error: ' + error.message)
+    console.error('Handler error:', error)
+    res.status(500).end(`Error: ${error.message}`)
   }
 }
