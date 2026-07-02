@@ -1,8 +1,5 @@
 {
-  "buildCommand": "npm run vercel-build",
-  "outputDirectory": "dist",
-  "env": {
-    "NODE_ENV": "production"
-  },
-  "public": true
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist/client",
+  "public": "dist/client"
 }
