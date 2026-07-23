@@ -17,6 +17,20 @@ export const Route = createFileRoute("/")({
 type Row = { item: string; status: string; obs: string };
 type Section = { id: string; title: string; rows: Row[] };
 
+function getStatusColors(status: string): { bg: string; text: string } | null {
+  const s = status.trim().toUpperCase();
+  if (s.includes("MANUTEN")) return { bg: "#fef9c3", text: "#854d0e" };
+  if (s.includes("PARADO")) return { bg: "#fee2e2", text: "#991b1b" };
+  return null;
+}
+
+function getStatusColorsRGB(status: string): { bg: [number, number, number]; text: [number, number, number] } | null {
+  const s = status.trim().toUpperCase();
+  if (s.includes("MANUTEN")) return { bg: [254, 249, 195], text: [133, 77, 14] };
+  if (s.includes("PARADO")) return { bg: [254, 226, 226], text: [153, 27, 27] };
+  return null;
+}
+
 const STORAGE_KEY = "nutrimilho-configuracao-v1";
 
 const initialSections: Section[] = [
@@ -203,6 +217,15 @@ function Index() {
         alternateRowStyles: { fillColor: [245, 250, 245] },
         columnStyles: { 0: { cellWidth: 140, fontStyle: "bold" }, 1: { cellWidth: 140 } },
         margin: { left: 30, right: 30 },
+        didParseCell: (data) => {
+          if (data.section !== "body") return;
+          const statusVal = String(data.row.raw[1] ?? "");
+          const colors = getStatusColorsRGB(statusVal);
+          if (colors) {
+            data.cell.styles.fillColor = colors.bg;
+            data.cell.styles.textColor = colors.text;
+          }
+        },
       });
       // @ts-expect-error lastAutoTable is provided at runtime
       cursorY = doc.lastAutoTable.finalY + 16;
@@ -300,39 +323,51 @@ function Index() {
               </button>
             </header>
             <div className="p-4 space-y-3">
-              {sec.rows.map((row, rIdx) => (
-                <div
-                  key={rIdx}
-                  className="grid grid-cols-2 gap-2 items-start rounded-md border p-2 md:border-0 md:p-0 md:grid-cols-[1fr_1fr_2fr_auto]"
-                >
-                  <input
-                    className="input"
-                    placeholder="Equipamento"
-                    value={row.item}
-                    onChange={(e) => updateRow(sIdx, rIdx, "item", e.target.value)}
-                  />
-                  <input
-                    className="input"
-                    placeholder="Status"
-                    value={row.status}
-                    onChange={(e) => updateRow(sIdx, rIdx, "status", e.target.value)}
-                  />
-                  <textarea
-                    className="input min-h-[42px] col-span-2 md:col-span-1"
-                    placeholder="Observação"
-                    value={row.obs}
-                    onChange={(e) => updateRow(sIdx, rIdx, "obs", e.target.value)}
-                  />
-                  <button
-                    onClick={() => removeRow(sIdx, rIdx)}
-                    className="col-span-2 md:col-span-1 justify-self-end text-destructive hover:bg-destructive/10 rounded-md px-3 py-1.5 text-sm"
-                    aria-label="Remover"
-                    title="Remover"
+              {sec.rows.map((row, rIdx) => {
+                const statusColors = getStatusColors(row.status);
+                const fieldStyle = statusColors
+                  ? { backgroundColor: statusColors.bg, color: statusColors.text }
+                  : undefined;
+                return (
+                  <div
+                    key={rIdx}
+                    className={`grid grid-cols-2 gap-2 items-start rounded-md p-2 md:grid-cols-[1fr_1fr_2fr_auto] ${
+                      statusColors ? "" : "border md:border-0 md:p-0"
+                    }`}
+                    style={statusColors ? { backgroundColor: statusColors.bg } : undefined}
                   >
-                    ✕ Remover
-                  </button>
-                </div>
-              ))}
+                    <input
+                      className="input"
+                      placeholder="Equipamento"
+                      value={row.item}
+                      onChange={(e) => updateRow(sIdx, rIdx, "item", e.target.value)}
+                      style={fieldStyle}
+                    />
+                    <input
+                      className="input"
+                      placeholder="Status"
+                      value={row.status}
+                      onChange={(e) => updateRow(sIdx, rIdx, "status", e.target.value)}
+                      style={fieldStyle}
+                    />
+                    <textarea
+                      className="input min-h-[42px] col-span-2 md:col-span-1"
+                      placeholder="Observação"
+                      value={row.obs}
+                      onChange={(e) => updateRow(sIdx, rIdx, "obs", e.target.value)}
+                      style={fieldStyle}
+                    />
+                    <button
+                      onClick={() => removeRow(sIdx, rIdx)}
+                      className="col-span-2 md:col-span-1 justify-self-end text-destructive hover:bg-destructive/10 rounded-md px-3 py-1.5 text-sm"
+                      aria-label="Remover"
+                      title="Remover"
+                    >
+                      ✕ Remover
+                    </button>
+                  </div>
+                );
+              })}
               {sec.rows.length === 0 && (
                 <p className="text-sm text-muted-foreground italic">Sem linhas. Clique em “+ Linha”.</p>
               )}
