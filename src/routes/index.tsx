@@ -163,7 +163,8 @@ function Index() {
   const generatePDF = async () => {
     const doc = new jsPDF({ unit: "pt", format: "a4" });
     const pageW = doc.internal.pageSize.getWidth();
-    const green: [number, number, number] = [34, 105, 46];
+    const green: [number, number, number] = [168, 216, 185];
+    const greenText: [number, number, number] = [26, 66, 43];
     const gold: [number, number, number] = [212, 175, 55];
 
     // Header band
@@ -179,7 +180,7 @@ function Index() {
       /* ignore */
     }
 
-    doc.setTextColor(255, 255, 255);
+    doc.setTextColor(...greenText);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(16);
     doc.text(title, pageW - 30, 40, { align: "right" });
@@ -198,7 +199,7 @@ function Index() {
         head: [[sec.title, "Status / Configuração atual", "Observação"]],
         body: sec.rows.map((r) => [r.item, r.status, r.obs]),
         styles: { fontSize: 9, cellPadding: 6, valign: "top", lineColor: [220, 220, 220], lineWidth: 0.5 },
-        headStyles: { fillColor: green, textColor: 255, fontStyle: "bold" },
+        headStyles: { fillColor: green, textColor: greenText, fontStyle: "bold" },
         alternateRowStyles: { fillColor: [245, 250, 245] },
         columnStyles: { 0: { cellWidth: 140, fontStyle: "bold" }, 1: { cellWidth: 140 } },
         margin: { left: 30, right: 30 },
@@ -214,7 +215,7 @@ function Index() {
       }
       doc.setFillColor(...green);
       doc.rect(30, cursorY, pageW - 60, 18, "F");
-      doc.setTextColor(255, 255, 255);
+      doc.setTextColor(...greenText);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
       doc.text("OBSERVAÇÕES", 38, cursorY + 12);
@@ -234,7 +235,7 @@ function Index() {
       const ph = doc.internal.pageSize.getHeight();
       doc.setFillColor(...green);
       doc.rect(0, ph - 20, pageW, 20, "F");
-      doc.setTextColor(255, 255, 255);
+      doc.setTextColor(...greenText);
       doc.setFontSize(8);
       doc.text("Nutrimilho — Configuração de Equipamentos", 30, ph - 7);
       doc.text(`Página ${i} de ${pageCount}`, pageW - 30, ph - 7, { align: "right" });
@@ -287,7 +288,7 @@ function Index() {
             <header className="bg-primary/10 border-b px-5 py-3 flex items-center gap-3">
               <span className="w-1.5 h-6 rounded bg-accent" />
               <input
-                className="flex-1 bg-transparent font-bold text-primary text-base outline-none"
+                className="flex-1 bg-transparent font-bold text-primary-foreground text-base outline-none"
                 value={sec.title}
                 onChange={(e) => updateSectionTitle(sIdx, e.target.value)}
               />
