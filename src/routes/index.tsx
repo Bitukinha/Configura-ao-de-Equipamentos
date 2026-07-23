@@ -15,7 +15,7 @@ export const Route = createFileRoute("/")({
 });
 
 type Row = { item: string; status: string; obs: string };
-type Section = { id: string; title: string; rows: Row[] };
+type Section = { id: string; title: string; rows: Row[]; note?: string };
 
 function getStatusColors(status: string): { bg: string; text: string } | null {
   const s = status.trim().toUpperCase();
@@ -174,6 +174,14 @@ function Index() {
     });
   };
 
+  const updateSectionNote = (sIdx: number, val: string) => {
+    setSections((prev) => {
+      const copy = structuredClone(prev);
+      copy[sIdx].note = val;
+      return copy;
+    });
+  };
+
   const generatePDF = async () => {
     const doc = new jsPDF({ unit: "pt", format: "a4" });
     const pageW = doc.internal.pageSize.getWidth();
@@ -228,7 +236,22 @@ function Index() {
         },
       });
       // @ts-expect-error lastAutoTable is provided at runtime
-      cursorY = doc.lastAutoTable.finalY + 16;
+      let sectionEndY = doc.lastAutoTable.finalY + 10;
+
+      if (sec.note && sec.note.trim()) {
+        if (sectionEndY > 760) {
+          doc.addPage();
+          sectionEndY = 40;
+        }
+        doc.setFont("helvetica", "italic");
+        doc.setFontSize(8.5);
+        doc.setTextColor(90, 90, 90);
+        const noteLines = doc.splitTextToSize(`Observação geral: ${sec.note.trim()}`, pageW - 60);
+        doc.text(noteLines, 30, sectionEndY);
+        sectionEndY += noteLines.length * 10 + 6;
+      }
+
+      cursorY = sectionEndY + 10;
     });
 
     if (notes.trim()) {
@@ -371,6 +394,17 @@ function Index() {
               {sec.rows.length === 0 && (
                 <p className="text-sm text-muted-foreground italic">Sem linhas. Clique em “+ Linha”.</p>
               )}
+              <div className="border-t pt-3">
+                <label className="block text-xs font-medium text-muted-foreground mb-1">
+                  Observação geral da seção
+                </label>
+                <textarea
+                  className="input min-h-[60px]"
+                  placeholder="Observação geral sobre esta seção (opcional)"
+                  value={sec.note ?? ""}
+                  onChange={(e) => updateSectionNote(sIdx, e.target.value)}
+                />
+              </div>
             </div>
           </section>
         ))}
