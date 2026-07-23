@@ -246,19 +246,19 @@ function Index() {
   return (
     <div className="min-h-screen bg-background">
       <header className="bg-primary text-primary-foreground">
-        <div className="mx-auto max-w-5xl px-6 py-5 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="bg-white rounded-md px-3 py-2 shadow-sm">
-              <img src={logo} alt="Nutrimilho" className="h-10 w-auto" />
+        <div className="mx-auto max-w-5xl px-4 py-4 sm:px-6 sm:py-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="bg-white rounded-md px-2 py-1.5 sm:px-3 sm:py-2 shadow-sm shrink-0">
+              <img src={logo} alt="Nutrimilho" className="h-8 w-auto sm:h-10" />
             </div>
-            <div>
-              <h1 className="text-lg md:text-xl font-bold leading-tight">Configuração de Equipamentos</h1>
-              <p className="text-xs md:text-sm opacity-90">Gerador de relatório diário em PDF</p>
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-lg md:text-xl font-bold leading-tight">Configuração de Equipamentos</h1>
+              <p className="text-xs sm:text-sm opacity-90">Gerador de relatório diário em PDF</p>
             </div>
           </div>
           <button
             onClick={generatePDF}
-            className="bg-accent text-accent-foreground font-semibold px-4 py-2 rounded-md shadow hover:brightness-95 transition"
+            className="w-full md:w-auto bg-accent text-accent-foreground font-semibold px-4 py-2.5 rounded-md shadow hover:brightness-95 transition"
           >
             Gerar PDF
           </button>
@@ -300,7 +300,10 @@ function Index() {
             </header>
             <div className="p-4 space-y-3">
               {sec.rows.map((row, rIdx) => (
-                <div key={rIdx} className="grid md:grid-cols-[1fr_1fr_2fr_auto] gap-2 items-start">
+                <div
+                  key={rIdx}
+                  className="grid grid-cols-2 gap-2 items-start rounded-md border p-2 md:border-0 md:p-0 md:grid-cols-[1fr_1fr_2fr_auto]"
+                >
                   <input
                     className="input"
                     placeholder="Equipamento"
@@ -314,18 +317,18 @@ function Index() {
                     onChange={(e) => updateRow(sIdx, rIdx, "status", e.target.value)}
                   />
                   <textarea
-                    className="input min-h-[42px]"
+                    className="input min-h-[42px] col-span-2 md:col-span-1"
                     placeholder="Observação"
                     value={row.obs}
                     onChange={(e) => updateRow(sIdx, rIdx, "obs", e.target.value)}
                   />
                   <button
                     onClick={() => removeRow(sIdx, rIdx)}
-                    className="text-destructive hover:bg-destructive/10 rounded-md px-2 py-2 text-sm"
+                    className="col-span-2 md:col-span-1 justify-self-end text-destructive hover:bg-destructive/10 rounded-md px-3 py-1.5 text-sm"
                     aria-label="Remover"
                     title="Remover"
                   >
-                    ✕
+                    ✕ Remover
                   </button>
                 </div>
               ))}
@@ -356,9 +359,8 @@ function Index() {
       </main>
 
       <footer className="border-t bg-background/80">
-        <div className="mx-auto flex max-w-5xl flex-col gap-1 px-6 py-4 text-center text-sm text-muted-foreground md:flex-row md:justify-between">
-          <span>© 2026 Nutrimilho - (Novaes Tech)</span>
-          <span>Todos os direitos reservados</span>
+        <div className="mx-auto max-w-5xl px-4 py-4 sm:px-6 text-center text-xs sm:text-sm text-muted-foreground">
+          © 2026 Nutrimilho - (Novaes Tech) | Todos os direitos reservados
         </div>
       </footer>
 
